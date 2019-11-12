@@ -56,6 +56,7 @@ console.log(histogram.percentiles())
 
   * <a href="#histogram"><code>Histogram</code></a>
   * <a href="#record"><code>histogram#<b>record()</b></code></a>
+  * <a href="#recordCorrectedValue"><code>histogram#<b>recordCorrectedValue()</b></code></a>
   * <a href="#min"><code>histogram#<b>min()</b></code></a>
   * <a href="#max"><code>histogram#<b>max()</b></code></a>
   * <a href="#mean"><code>histogram#<b>mean()</b></code></a>
@@ -64,7 +65,19 @@ console.log(histogram.percentiles())
   * <a href="#percentiles"><code>histogram#<b>percentiles()</b></code></a>
   * <a href="#encode"><code>histogram#<b>encode()</b></code></a>
   * <a href="#decode"><code>histogram#<b>decode()</b></code></a>
+  * <a href="#lowestEquivalentValue"><code>histogram#<b>lowestEquivalentValue()</b></code></a>
+  * <a href="#highestEquivalentValue"><code>histogram#<b>highestEquivalentValue()</b></code></a>
+  * <a href="#nextNonEquivalentValue"><code>histogram#<b>nextNonEquivalentValue()</b></code></a>
+  * <a href="#areValuesEquivalent"><code>histogram#<b>areValuesEquivalent()</b></code></a>
+  * <a href="#add"><code>histogram#<b>add()</b></code></a>
   * <a href="#reset"><code>histogram#<b>reset()</b></code></a>
+  
+#### Properties
+  * <a href="#lowestTrackableValue"><code>histogram#lowestTrackableValue</code></a>
+  * <a href="#highestTrackableValue"><code>histogram#highestTrackableValue</code></a>
+  * <a href="#significantFigures"><code>histogram#significantFigures</code></a>
+  * <a href="#totalCount"><code>histogram#totalCount</code></a>
+  * <a href="#memorySize"><code>histogram#memorySize</code></a>
 
 -------------------------------------------------------
 <a name="histogram"></a>
@@ -82,10 +95,22 @@ Create a new histogram with:
 -------------------------------------------------------
 <a name="record"></a>
 
-### histogram.record(value)
+### histogram.record(value, count = 1)
 
-Record `value` in the histogram. Returns `true` if the recording was
+Record `value` in the histogram with a count of `count`. Returns `true` if the recording was
 successful, `false` otherwise.
+
+-------------------------------------------------------
+<a name="recordCorrectedValue"></a>
+
+### histogram.recordCorrectedValue(value, expectedInterval, count = 1)
+
+Record `value` in the histogram with a count of `count` and backfill based on a `expectedInterval`.
+This is specifically used for recording latency.  If `value` is larger than the `expectedInterval` 
+then the latency recording system has experienced co-ordinated omission.  This method fills in the
+values that would have occurred had the client providing the load not been blocked.
+
+Returns `true` if the recording was successful, `false` otherwise.
 
 -------------------------------------------------------
 <a name="min"></a>
@@ -158,12 +183,99 @@ Returns a `Buffer` containing a serialized version of the histogram
 Reads a `Buffer` and deserialize an histogram.
 
 -------------------------------------------------------
+<a name="lowestEquivalentValue"></a>
+
+### histogram.lowestEquivalentValue(value)
+
+Get the lowest value that is equivalent to the given value within the 
+histogram's resolution, where "equivalent" means that value samples 
+recorded for any two equivalent values are counted in a common total count.
+
+------------------------------------------------------
+<a name="highestEquivalentValue"></a>
+
+### histogram.highestEquivalentValue(value)
+
+Get the highest value that is equivalent to the given value within the 
+histogram's resolution, where "equivalent" means that value samples 
+recorded for any two equivalent values are counted in a common total count.
+
+------------------------------------------------------
+<a name="nextNonEquivalentValue"></a>
+
+### histogram.nextNonEquivalentValue(value)
+
+Get the next value that is not equivalent to the given value within the histogram's resolution.
+
+------------------------------------------------------
+<a name="areValuesEquivalent"></a>
+
+### histogram.areValueEquivalent(value1, value2)
+
+Determine if two values are equivalent within the histogram's resolution
+where "equivalent" means that value samples recorded for any two
+equivalent values are counted in a common total count.
+
+-------------------------------------------------------
+<a name="add"></a>
+
+### histogram.add(other[, expectedIntervalBetweenValueSamples])
+
+Adds all of the values from `other` to 'this' histogram.  Will return the
+number of values that are dropped when copying.  Values will be dropped
+if they around outside of `histogram.lowestTrackableValue` and
+`histogram.highestTrackableValue`. 
+
+If `expectedIntervalBetweenValueSamples` is specified, values are 
+backfilled with values that would have occurred had the client providing the load 
+not been blocked. The values added will include an auto-generated additional series of
+decreasingly-smaller (down to the `expectedIntervalBetweenValueSamples`) value records for each count found
+in the current histogram that is larger than the `expectedIntervalBetweenValueSamples`.
+     
+Returns the number of values dropped while copying.
+
+-------------------------------------------------------
 <a name="reset"></a>
 
 ### histogram.reset()
 
 Resets the histogram so it can be reused.
 
+-------------------------------------------------------
+<a name="properties"></a>
+## Properties
+
+<a name="lowestTrackableValue"></a>
+### histogram.lowestTrackableValue
+
+Get the configured lowestTrackableValue
+
+-------------------------------------------------------
+
+<a name="highestTrackableValue"></a>
+### histogram.highestTrackableValue
+
+Get the configured highestTrackableValue
+
+-------------------------------------------------------
+<a name="significantFigures"></a>
+### histogram.significantFigures
+
+Get the configured number of significant value digits
+
+-------------------------------------------------------
+<a name="totalCount"></a>
+### histogram.totalCount
+
+Gets the total number of recorded values.
+
+-------------------------------------------------------
+<a name="#memorySize"></a>
+### histogram.memorySize
+
+Get the memory size of the Histogram.
+
+-------------------------------------------------------
 ## Acknowledgements
 
 This project was kindly sponsored by [nearForm](http://nearform.com).

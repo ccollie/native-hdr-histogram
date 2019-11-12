@@ -7,6 +7,7 @@ extern "C" {
 }
 
 Nan::Persistent<v8::Function> HdrHistogramWrap::constructor;
+Nan::Persistent<v8::Value> HdrHistogramWrap::prototype;
 
 NAN_MODULE_INIT(HdrHistogramWrap::Init) {
   v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
@@ -14,6 +15,7 @@ NAN_MODULE_INIT(HdrHistogramWrap::Init) {
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
   Nan::SetPrototypeMethod(tpl, "record", Record);
+  Nan::SetPrototypeMethod(tpl, "recordCorrectedValue", RecordCorrectedValue);
   Nan::SetPrototypeMethod(tpl, "min", Min);
   Nan::SetPrototypeMethod(tpl, "max", Max);
   Nan::SetPrototypeMethod(tpl, "mean", Mean);
@@ -22,7 +24,20 @@ NAN_MODULE_INIT(HdrHistogramWrap::Init) {
   Nan::SetPrototypeMethod(tpl, "encode", Encode);
   Nan::SetMethod(tpl, "decode", Decode);
   Nan::SetPrototypeMethod(tpl, "percentiles", Percentiles);
+  Nan::SetPrototypeMethod(tpl, "add", Add);
+  Nan::SetPrototypeMethod(tpl, "countAtValue", GetCountAtValue);
+  Nan::SetPrototypeMethod(tpl, "valuesAreEquivalent", ValuesAreEquivalent);
+  Nan::SetPrototypeMethod(tpl, "lowestEquivalentValue", LowestEquivalentValue);
+  Nan::SetPrototypeMethod(tpl, "highestEquivalentValue", HighestEquivalentValue);
+  Nan::SetPrototypeMethod(tpl, "nextNonEquivalentValue", NextNonEquivalentValue);
   Nan::SetPrototypeMethod(tpl, "reset", Reset);
+
+  // Properties
+  Nan::SetAccessor(tpl->InstanceTemplate(), Nan::New("lowestTrackableValue").ToLocalChecked(), HdrHistogramWrap::Getter);
+  Nan::SetAccessor(tpl->InstanceTemplate(), Nan::New("highestTrackableValue").ToLocalChecked(), HdrHistogramWrap::Getter);
+  Nan::SetAccessor(tpl->InstanceTemplate(), Nan::New("significantFigures").ToLocalChecked(), HdrHistogramWrap::Getter);
+  Nan::SetAccessor(tpl->InstanceTemplate(), Nan::New("totalCount").ToLocalChecked(), HdrHistogramWrap::Getter);
+  Nan::SetAccessor(tpl->InstanceTemplate(), Nan::New("memorySize").ToLocalChecked(), HdrHistogramWrap::Getter);
 
   constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
   Nan::Set(target, Nan::New("HdrHistogram").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
@@ -79,10 +94,13 @@ NAN_METHOD(HdrHistogramWrap::New) {
 
     info.GetReturnValue().Set(wrap.ToLocalChecked());
   }
+
+  if (prototype.IsEmpty()) {
+    prototype.Reset(info.This()->GetPrototype());
+  }
 }
 
 NAN_METHOD(HdrHistogramWrap::Record) {
-  int64_t value;
   HdrHistogramWrap* obj = Nan::ObjectWrap::Unwrap<HdrHistogramWrap>(info.This());
 
   if (info[0]->IsUndefined()) {
@@ -90,8 +108,30 @@ NAN_METHOD(HdrHistogramWrap::Record) {
     return;
   }
 
-  value = Nan::To<int64_t>(info[0]).FromJust();
-  bool result = hdr_record_value(obj->histogram, value);
+  int64_t count = info[1]->IsUndefined() ? 1 : Nan::To<int64_t>(info[1]).FromJust();
+  int64_t value = Nan::To<int64_t>(info[0]).FromJust();
+
+  bool result = hdr_record_values(obj->histogram, value, count);
+  info.GetReturnValue().Set(result);
+}
+
+NAN_METHOD(HdrHistogramWrap::RecordCorrectedValue) {
+  HdrHistogramWrap* obj = Nan::ObjectWrap::Unwrap<HdrHistogramWrap>(info.This());
+
+  if (info[0]->IsUndefined()) {
+    info.GetReturnValue().Set(false);
+    return;
+  }
+
+  if (info[1]->IsUndefined()) {
+   return Nan::ThrowError("No interval specified");
+  }
+
+  int64_t value = Nan::To<int64_t>(info[0]).FromJust();
+  int64_t expected_interval = Nan::To<int64_t>(info[1]).FromJust();
+  int64_t count = info[2]->IsUndefined() ? 1 : Nan::To<int64_t>(info[2]).FromJust();
+
+  bool result = hdr_record_corrected_values(obj->histogram, value, count, expected_interval);
   info.GetReturnValue().Set(result);
 }
 
@@ -195,8 +235,137 @@ NAN_METHOD(HdrHistogramWrap::Percentiles) {
   info.GetReturnValue().Set(result);
 }
 
+NAN_METHOD(HdrHistogramWrap::Add) {
+  HdrHistogramWrap* obj = Nan::ObjectWrap::Unwrap<HdrHistogramWrap>(info.This());
+  HdrHistogramWrap* from = CheckUnwrap(info[0]);
+
+  if (!from) {
+    return Nan::ThrowTypeError("HdrHistogram expected");
+  }
+
+  int64_t dropped;
+
+  if (info[1]->IsUndefined()) {
+    dropped = hdr_add(obj->histogram, from->histogram);
+  } else {
+    int64_t expected_interval = Nan::To<int64_t>(info[1]).FromJust();
+    dropped = hdr_add_while_correcting_for_coordinated_omission(obj->histogram, from->histogram, expected_interval);
+  }
+
+  return info.GetReturnValue().Set((double) dropped); 
+}
+
+NAN_METHOD(HdrHistogramWrap::GetCountAtValue) {
+  if (info[0]->IsUndefined()) {
+    return Nan::ThrowError("No value specified");
+  }
+
+  int64_t value = Nan::To<int64_t>(info[0]).FromJust();
+
+  HdrHistogramWrap* obj = Nan::ObjectWrap::Unwrap<HdrHistogramWrap>(info.This());
+
+  int64_t count = hdr_count_at_value(obj->histogram, value);
+  info.GetReturnValue().Set((double) count);
+}
+
+NAN_METHOD(HdrHistogramWrap::ValuesAreEquivalent) {
+
+  if (info[0]->IsUndefined() || info[1]->IsUndefined()) {
+    return Nan::ThrowError("Expect 2 values for comparison");
+  }
+
+  int64_t a = Nan::To<int64_t>(info[0]).FromJust();
+  int64_t b = Nan::To<int64_t>(info[1]).FromJust();
+
+  HdrHistogramWrap* obj = Nan::ObjectWrap::Unwrap<HdrHistogramWrap>(info.This());
+
+  bool equivalent = hdr_values_are_equivalent(obj->histogram, a, b);
+  info.GetReturnValue().Set(equivalent);
+}
+
+NAN_METHOD(HdrHistogramWrap::LowestEquivalentValue) {
+  if (info[0]->IsUndefined()) {
+    return Nan::ThrowError("No value specified");
+  }
+
+  int64_t value = Nan::To<int64_t>(info[0]).FromJust();
+
+  HdrHistogramWrap* obj = Nan::ObjectWrap::Unwrap<HdrHistogramWrap>(info.This());
+
+  int64_t equivalent = hdr_lowest_equivalent_value(obj->histogram, value);
+  info.GetReturnValue().Set((double) equivalent);
+}
+
+NAN_METHOD(HdrHistogramWrap::HighestEquivalentValue) {
+  if (info[0]->IsUndefined()) {
+    return Nan::ThrowError("No value specified");
+  }
+
+  int64_t value = Nan::To<int64_t>(info[0]).FromJust();
+
+  HdrHistogramWrap* obj = Nan::ObjectWrap::Unwrap<HdrHistogramWrap>(info.This());
+
+  int64_t highest = hdr_next_non_equivalent_value(obj->histogram, value) - 1;
+  info.GetReturnValue().Set((double) highest);
+}
+
+NAN_METHOD(HdrHistogramWrap::NextNonEquivalentValue) {
+  if (info[0]->IsUndefined()) {
+    return Nan::ThrowError("No value specified");
+  }
+
+  int64_t value = Nan::To<int64_t>(info[0]).FromJust();
+
+  HdrHistogramWrap* obj = Nan::ObjectWrap::Unwrap<HdrHistogramWrap>(info.This());
+
+  int64_t next = hdr_next_non_equivalent_value(obj->histogram, value);
+  info.GetReturnValue().Set((double) next);
+}
+
 NAN_METHOD(HdrHistogramWrap::Reset) {
   HdrHistogramWrap* obj = Nan::ObjectWrap::Unwrap<HdrHistogramWrap>(info.This());
   hdr_reset(obj->histogram);
   info.GetReturnValue().Set(info.This());
+}
+
+NAN_GETTER(HdrHistogramWrap::Getter) {
+  HdrHistogramWrap* obj = Nan::ObjectWrap::Unwrap<HdrHistogramWrap>(info.Holder());
+  std::string propertyName = std::string(*Nan::Utf8String(property));
+
+  if (propertyName == "totalCount") {
+    return info.GetReturnValue().Set((double) obj->histogram->total_count);
+  } else if (propertyName == "lowestTrackableValue") {
+    return info.GetReturnValue().Set((double) obj->histogram->lowest_trackable_value);
+  } else if (propertyName == "highestTrackableValue") {
+    return info.GetReturnValue().Set((double) obj->histogram->highest_trackable_value);
+  } else if (propertyName == "significantFigures") {
+    return info.GetReturnValue().Set((int) obj->histogram->significant_figures);
+  } else if (propertyName == "memorySize") {
+    return info.GetReturnValue().Set((double) hdr_get_memory_size(obj->histogram));
+  }
+
+  info.GetReturnValue().SetUndefined();
+}
+ 
+// Walks the prototype chain to make sure arg is a HdrHisogram or descendent 
+HdrHistogramWrap *HdrHistogramWrap::CheckUnwrap(v8::Local<v8::Value> arg) {
+  Nan::MaybeLocal<v8::Object> maybe = Nan::To<v8::Object>(arg);
+  if (!maybe.IsEmpty()) {
+    v8::Local<v8::Object> obj = maybe.ToLocalChecked();
+    v8::Local<v8::Object> current = obj;
+
+    do {
+      v8::Local<v8::Value> proto = current->GetPrototype();
+      if (proto.IsEmpty() || !proto->IsObject()) {
+        break;
+      }
+      // arg is derived from HdrHistogram prototype
+      if (proto == prototype) {
+        return Nan::ObjectWrap::Unwrap<HdrHistogramWrap>(obj);
+      }
+      current = proto.As<v8::Object>();  
+    } while (true);
+  }
+ 
+  return (HdrHistogramWrap *)NULL;
 }
