@@ -218,6 +218,28 @@ test('support >2e9', (t) => {
   t.end()
 })
 
+test('valuesAreEquivalent', (t) => {
+  const instance = new Histogram(20000000, 100000000, 5)
+  instance.record(100000000)
+  instance.record(20000000)
+  instance.record(30000000)
+  t.equal(true, instance.valuesAreEquivalent(20000000, instance.percentile(50.0)))
+  t.equal(true, instance.valuesAreEquivalent(30000000, instance.percentile(50.0)))
+  t.equal(true, instance.valuesAreEquivalent(100000000, instance.percentile(83.34)))
+  t.equal(true, instance.valuesAreEquivalent(100000000, instance.percentile(99.0)))
+
+  t.throws(() => instance.valuesAreEquivalent())
+  t.throws(() => instance.valuesAreEquivalent(1000))
+  t.end()
+})
+
+test('valuesAreEquivalent argument checks', (t) => {
+  const instance = new Histogram(1, 1000)
+  t.throws(() => instance.valuesAreEquivalent())
+  t.throws(() => instance.valuesAreEquivalent(1000))
+  t.end()
+})
+
 test('reset histogram', (t) => {
   const instance = new Histogram(1, 100)
   t.equal(instance.min(), 9223372036854776000, 'min is setup')

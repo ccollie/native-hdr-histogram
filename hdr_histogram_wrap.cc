@@ -22,6 +22,7 @@ void HdrHistogramWrap::Init(Napi::Env env, Napi::Object target) {
     InstanceMethod("encode", &HdrHistogramWrap::Encode),
     InstanceMethod("percentiles", &HdrHistogramWrap::Percentiles),
     InstanceMethod("reset", &HdrHistogramWrap::Reset),
+    InstanceMethod("valuesAreEquivalent", &HdrHistogramWrap::ValuesAreEquivalent),
     StaticMethod("decode", &HdrHistogramWrap::Decode),
 
     InstanceAccessor("totalCount", &HdrHistogramWrap::GetTotalCount, nullptr),
@@ -207,6 +208,22 @@ Napi::Value HdrHistogramWrap::Reset(const Napi::CallbackInfo& info) {
   HdrHistogramWrap* obj = this;
   hdr_reset(obj->histogram);
   return info.This();
+}
+
+Napi::Value HdrHistogramWrap::ValuesAreEquivalent(const Napi::CallbackInfo& info) {
+  HdrHistogramWrap* obj = this;
+  Napi::Env env = info.Env();
+
+  if (info[0].IsUndefined() || info[1].IsUndefined()) {
+    Napi::Error::New(env, "Expected 2 values for comparison").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+
+  int64_t a = info[0].As<Napi::Number>().Int64Value();
+  int64_t b = info[1].As<Napi::Number>().Int64Value();
+
+  bool equivalent = hdr_values_are_equivalent(obj->histogram, a, b);
+  return Napi::Boolean::New(env, equivalent);
 }
 
 Napi::Value HdrHistogramWrap::GetTotalCount(const Napi::CallbackInfo& info) {

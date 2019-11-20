@@ -66,6 +66,7 @@ console.log(histogram.percentiles())
   * <a href="#encode"><code>histogram#<b>encode()</b></code></a>
   * <a href="#decode"><code>histogram#<b>decode()</b></code></a>
   * <a href="#reset"><code>histogram#<b>reset()</b></code></a>
+  * <a href="#valuesAreEquivalent"><code>histogram#<b>valuesAreEquivalent()</b></code></a>
 
   #### Properties
   * <a href="#lowestTrackableValue"><code>histogram#lowestTrackableValue</code></a>
@@ -187,6 +188,14 @@ Reads a `Buffer` and deserialize an histogram.
 
 Resets the histogram so it can be reused.
 
+-------------------------------------------------------
+<a name="areValuesEquivalent"></a>
+
+### histogram.valuesAreEquivalent(value1, value2)
+
+Determine if two values are equivalent within the histogram's resolution
+where "equivalent" means that value samples recorded for any two
+equivalent values are counted in a common total count.
 -------------------------------------------------------
 <a name="properties"></a>
 ## Properties
