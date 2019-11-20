@@ -25,10 +25,34 @@ test('create an histogram arguments checks', (t) => {
   t.end()
 })
 
+test('properties', (t) => {
+  const instance = new Histogram(5, 150, 4)
+
+  t.equal(instance.lowestTrackableValue, 5, 'properly returns lowestTrackableValue')
+  t.equal(instance.highestTrackableValue, 150, 'properly returns highestTrackableValue')
+  t.equal(instance.significantFigures, 4, 'properly returns significantFigures')
+  t.equal(instance.totalCount, 0, 'properly returns totalCount')
+  t.equal(instance.memorySize > 0, true, 'memory allocated for instance')
+  t.end()
+})
+
+test('totalCount', (t) => {
+  const instance = new Histogram(1, 100)
+  const count = Math.floor(Math.random() * 20) + 10
+  for (let i = 0; i < count; i++) {
+    instance.record(i + 1)
+  }
+  t.equal(instance.totalCount, count, 'totalCount is correct after add')
+  t.ok(instance.reset())
+  t.equal(instance.totalCount, 0, 'totalCount is correct after reset')
+  t.end()
+})
+
 test('record values in an histogram', (t) => {
   const instance = new Histogram(1, 100)
   t.ok(instance.record(42))
   t.ok(instance.record(45))
+  t.equal(instance.totalCount, 2, 'recordValue increments totalCount')
   t.end()
 })
 

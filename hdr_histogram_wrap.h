@@ -23,8 +23,15 @@ class HdrHistogramWrap : public Napi::ObjectWrap<HdrHistogramWrap> {
   Napi::Value Encode(const Napi::CallbackInfo& info);
   Napi::Value Percentiles(const Napi::CallbackInfo& info);
   Napi::Value Reset(const Napi::CallbackInfo& info);
-
+  
   static Napi::Value Decode(const Napi::CallbackInfo& info);
+
+  // Property accessors
+  Napi::Value GetTotalCount(const Napi::CallbackInfo& info);
+  Napi::Value GetHighestTrackableValue(const Napi::CallbackInfo& info);
+  Napi::Value GetLowestTrackableValue(const Napi::CallbackInfo& info);
+  Napi::Value GetSignificantFigures(const Napi::CallbackInfo& info);
+  Napi::Value GetMemorySize(const Napi::CallbackInfo& info);
 
  private:
   static Napi::FunctionReference constructor;

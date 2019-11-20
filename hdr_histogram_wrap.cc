@@ -21,7 +21,13 @@ void HdrHistogramWrap::Init(Napi::Env env, Napi::Object target) {
     InstanceMethod("encode", &HdrHistogramWrap::Encode),
     InstanceMethod("percentiles", &HdrHistogramWrap::Percentiles),
     InstanceMethod("reset", &HdrHistogramWrap::Reset),
-    StaticMethod("decode", &HdrHistogramWrap::Decode)
+    StaticMethod("decode", &HdrHistogramWrap::Decode),
+
+    InstanceAccessor("totalCount", &HdrHistogramWrap::GetTotalCount, nullptr),
+    InstanceAccessor("highestTrackableValue", &HdrHistogramWrap::GetHighestTrackableValue, nullptr),
+    InstanceAccessor("lowestTrackableValue", &HdrHistogramWrap::GetLowestTrackableValue, nullptr),
+    InstanceAccessor("significantFigures", &HdrHistogramWrap::GetSignificantFigures, nullptr),
+    InstanceAccessor("memorySize", &HdrHistogramWrap::GetMemorySize, nullptr)
   });
 
   constructor = Napi::Persistent(ctor);
@@ -55,23 +61,6 @@ HdrHistogramWrap::HdrHistogramWrap(const Napi::CallbackInfo& info) : Napi::Objec
   if (init_result != 0) {
     throw Napi::Error::New(env, "Unable to initialize the Histogram");
   }
-}
-
-Napi::Object HdrHistogramWrap::NewInstance(const Napi::CallbackInfo& info) {
-  // Napi::Env env = info.Env();
-  const int argc = info.Length();
-
-  napi_value args[argc];
-
-  for (int i = 0; i < argc; i++) {
-    args[i] = info[i];
-  }
-
-  std::vector<napi_value> argv;
-
-  argv.assign(args, args + argc);
-  Napi::Object obj = constructor.New(argv);
-  return obj;
 }
 
 HdrHistogramWrap::~HdrHistogramWrap() {
@@ -192,4 +181,24 @@ Napi::Value HdrHistogramWrap::Reset(const Napi::CallbackInfo& info) {
   HdrHistogramWrap* obj = this;
   hdr_reset(obj->histogram);
   return info.This();
+}
+
+Napi::Value HdrHistogramWrap::GetTotalCount(const Napi::CallbackInfo& info) {
+  return Napi::Number::New(info.Env(), (double)this->histogram->total_count);
+}
+
+Napi::Value HdrHistogramWrap::GetHighestTrackableValue(const Napi::CallbackInfo& info) {
+  return Napi::Number::New(info.Env(), (double)this->histogram->highest_trackable_value);
+}
+
+Napi::Value HdrHistogramWrap::GetLowestTrackableValue(const Napi::CallbackInfo& info) {
+  return Napi::Number::New(info.Env(), (double)this->histogram->lowest_trackable_value);
+}
+
+Napi::Value HdrHistogramWrap::GetSignificantFigures(const Napi::CallbackInfo& info) {
+  return Napi::Number::New(info.Env(), (double)this->histogram->significant_figures);
+}
+
+Napi::Value HdrHistogramWrap::GetMemorySize(const Napi::CallbackInfo& info) {
+  return Napi::Number::New(info.Env(), (double)hdr_get_memory_size(this->histogram));
 }

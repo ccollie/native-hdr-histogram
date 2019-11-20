@@ -66,10 +66,17 @@ console.log(histogram.percentiles())
   * <a href="#decode"><code>histogram#<b>decode()</b></code></a>
   * <a href="#reset"><code>histogram#<b>reset()</b></code></a>
 
+  #### Properties
+  * <a href="#lowestTrackableValue"><code>histogram#lowestTrackableValue</code></a>
+  * <a href="#highestTrackableValue"><code>histogram#highestTrackableValue</code></a>
+  * <a href="#significantFigures"><code>histogram#significantFigures</code></a>
+  * <a href="#totalCount"><code>histogram#totalCount</code></a>
+  * <a href="#memorySize"><code>histogram#memorySize</code></a>
+
 -------------------------------------------------------
 <a name="histogram"></a>
 
-### Histogram(lowest, max, figures)
+### new Histogram(lowest, max, figures)
 
 Create a new histogram with:
 
@@ -164,6 +171,40 @@ Reads a `Buffer` and deserialize an histogram.
 
 Resets the histogram so it can be reused.
 
+-------------------------------------------------------
+<a name="properties"></a>
+## Properties
+
+<a name="lowestTrackableValue"></a>
+### histogram.lowestTrackableValue
+
+Get the configured lowestTrackableValue
+
+-------------------------------------------------------
+<a name="highestTrackableValue"></a>
+### histogram.highestTrackableValue
+
+Get the configured highestTrackableValue
+
+-------------------------------------------------------
+<a name="significantFigures"></a>
+### histogram.significantFigures
+
+Get the configured number of significant value digits
+
+-------------------------------------------------------
+<a name="totalCount"></a>
+### histogram.totalCount
+
+Gets the total number of recorded values.
+
+-------------------------------------------------------
+<a name="#memorySize"></a>
+### histogram.memorySize
+
+Get the memory size of the Histogram.
+
+-------------------------------------------------------
 ## Acknowledgements
 
 This project was kindly sponsored by [nearForm](http://nearform.com).
