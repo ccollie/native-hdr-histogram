@@ -45,7 +45,7 @@
     "host": "https://autocannon-assets.s3-eu-west-1.amazonaws.com"
   },
   "dependencies": {
-    "nan": "^2.14.0",
+    "node-addon-api": "^1.7.1",
     "node-pre-gyp": "^0.13.0"
   }
 }
