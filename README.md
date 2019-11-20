@@ -56,6 +56,7 @@ console.log(histogram.percentiles())
 
   * <a href="#histogram"><code>Histogram</code></a>
   * <a href="#record"><code>histogram#<b>record()</b></code></a>
+  * <a href="#add"><code>histogram#<b>add()</b></code></a>
   * <a href="#min"><code>histogram#<b>min()</b></code></a>
   * <a href="#max"><code>histogram#<b>max()</b></code></a>
   * <a href="#mean"><code>histogram#<b>mean()</b></code></a>
@@ -93,6 +94,21 @@ Create a new histogram with:
 
 Record `value` in the histogram. Returns `true` if the recording was
 successful, `false` otherwise.
+-------------------------------------------------------
+<a name="add"></a>
+
+### histogram.add(other[, expectedIntervalBetweenValueSamples])
+
+Adds values from `other` to 'this' histogram.  
+
+If `expectedIntervalBetweenValueSamples` is specified, values are 
+backfilled with values that would have occurred had the client providing the load 
+not been blocked. The values added will include an auto-generated additional series of
+decreasingly-smaller (down to the `expectedIntervalBetweenValueSamples`) value records for each count found
+in the current histogram that is larger than the `expectedIntervalBetweenValueSamples`.
+     
+Returns the number of values dropped while copying. Values will be dropped
+if they around outside of `histogram.lowestTrackableValue` and  `histogram.highestTrackableValue`. 
 
 -------------------------------------------------------
 <a name="min"></a>

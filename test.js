@@ -63,6 +63,63 @@ test('recording a non-value returns false', (t) => {
   t.end()
 })
 
+test('add histogram', (t) => {
+  const highestTrackableValue = 3600 * 1000 * 1000 // 1 hour in usec units
+  const numberOfSignificantValueDigits = 3
+  const testValueLevel = 4
+
+  const histogram = new Histogram(1, highestTrackableValue, numberOfSignificantValueDigits)
+  const other = new Histogram(1, highestTrackableValue, numberOfSignificantValueDigits)
+
+  histogram.record(testValueLevel)
+  histogram.record(testValueLevel * 1000)
+  other.record(testValueLevel)
+  other.record(testValueLevel * 1000)
+
+  histogram.add(other)
+  t.equal(histogram.totalCount, 4, 'add should increase the totalCount of the destination by the count added')
+
+  const biggerOther = new Histogram(1, highestTrackableValue * 2, numberOfSignificantValueDigits)
+  biggerOther.record(testValueLevel)
+  biggerOther.record(testValueLevel * 1000)
+  biggerOther.record(highestTrackableValue * 2)
+
+  // Adding the smaller histogram to the bigger one should work:
+  const dropped = biggerOther.add(histogram)
+  t.equal(dropped, 0, 'no values should be dropped if a histogram with a smaller range is added')
+  t.equal(biggerOther.totalCount, 7)
+
+  // But trying to add a larger histogram into a smaller one should cause values to be dropped
+  t.equal(histogram.add(biggerOther), 1, 'add a larger histogram to a smaller one causes out of range values to be dropped')
+
+  t.end()
+})
+
+test('fail add', (t) => {
+  const instance = new Histogram(1, 100)
+  t.throws(() => instance.add())
+  t.throws(() => instance.add('hello'))
+  t.throws(() => instance.add({}))
+  t.end()
+})
+
+test('add with subclasses', (t) => {
+  class Subclass extends Histogram {
+    constructor () {
+      super(1, 100)
+    }
+  }
+
+  const instance = new Histogram(1, 100)
+  const sub = new Subclass()
+  for (let i = 0; i < 5; i++) {
+    sub.record((i + 1) * 10)
+  }
+  t.equal(instance.add(sub), 0, 'can add from subclass')
+  t.equal(instance.totalCount, sub.totalCount, 'totalCount is correct after add')
+  t.end()
+})
+
 test('stdev, mean, min, max', (t) => {
   const instance = new Histogram(1, 100)
   t.ok(instance.record(42))

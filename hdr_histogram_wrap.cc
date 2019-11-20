@@ -13,6 +13,7 @@ void HdrHistogramWrap::Init(Napi::Env env, Napi::Object target) {
 
   Napi::Function ctor = DefineClass(env, "HdrHistogram", {
     InstanceMethod("record", &HdrHistogramWrap::Record),
+    InstanceMethod("add", &HdrHistogramWrap::Add),
     InstanceMethod("min", &HdrHistogramWrap::Min),
     InstanceMethod("max", &HdrHistogramWrap::Max),
     InstanceMethod("mean", &HdrHistogramWrap::Mean),
@@ -80,6 +81,31 @@ Napi::Value HdrHistogramWrap::Record(const Napi::CallbackInfo& info) {
   value = info[0].As<Napi::Number>().Int64Value();
   bool result = hdr_record_value(obj->histogram, value);
   return Napi::Boolean::New(info.Env(), result);
+}
+
+Napi::Value HdrHistogramWrap::Add(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+
+  Napi::Object object = info[0].As<Napi::Object>();
+  bool isHistogram = object.InstanceOf(HdrHistogramWrap::constructor.Value());
+  if (!isHistogram) {
+    Napi::TypeError::New(env, "Histogram expected.").ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  HdrHistogramWrap* obj = this;
+  HdrHistogramWrap* from = HdrHistogramWrap::Unwrap(object);
+
+  int64_t dropped;
+
+  if (info[1].IsUndefined()) {
+    dropped = hdr_add(obj->histogram, from->histogram);
+  } else {
+    int64_t expected_interval = info[1].As<Napi::Number>().Int64Value();
+    dropped = hdr_add_while_correcting_for_coordinated_omission(obj->histogram, from->histogram, expected_interval);
+  }
+
+  return Napi::Number::New(env, (double)dropped);
 }
 
 Napi::Value HdrHistogramWrap::Min(const Napi::CallbackInfo& info) {

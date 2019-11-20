@@ -15,6 +15,7 @@ class HdrHistogramWrap : public Napi::ObjectWrap<HdrHistogramWrap> {
   ~HdrHistogramWrap();
 
   Napi::Value Record(const Napi::CallbackInfo& info);
+  Napi::Value Add(const Napi::CallbackInfo& info);
   Napi::Value Min(const Napi::CallbackInfo& info);
   Napi::Value Max(const Napi::CallbackInfo& info);
   Napi::Value Mean(const Napi::CallbackInfo& info);
