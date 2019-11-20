@@ -56,6 +56,7 @@ console.log(histogram.percentiles())
 
   * <a href="#histogram"><code>Histogram</code></a>
   * <a href="#record"><code>histogram#<b>record()</b></code></a>
+  * <a href="#recordCorrectedValue"><code>histogram#<b>recordCorrectedValue()</b></code></a>
   * <a href="#add"><code>histogram#<b>add()</b></code></a>
   * <a href="#min"><code>histogram#<b>min()</b></code></a>
   * <a href="#max"><code>histogram#<b>max()</b></code></a>
@@ -96,6 +97,18 @@ Create a new histogram with:
 
 Record `value` in the histogram. Returns `true` if the recording was
 successful, `false` otherwise.
+-------------------------------------------------------
+<a name="recordCorrectedValue"></a>
+
+### histogram.recordCorrectedValue(value, expectedInterval, count = 1)
+
+Record `value` in the histogram with a count of `count` and backfill based on a `expectedInterval`.
+This is specifically used for recording latency.  If `value` is larger than the `expectedInterval` 
+then the latency recording system has experienced co-ordinated omission.  This method fills in the
+values that would have occurred had the client providing the load not been blocked.
+
+Returns `true` if the recording was successful, `false` otherwise.
+
 -------------------------------------------------------
 <a name="add"></a>
 

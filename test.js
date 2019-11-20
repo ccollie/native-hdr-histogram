@@ -63,6 +63,42 @@ test('recording a non-value returns false', (t) => {
   t.end()
 })
 
+test('recordCorrectedValue', (t) => {
+  const INTERVAL = 10000
+  const HIGHEST = 3600 * 1000 * 1000
+  const SIGNIFICANT = 3
+  const instance = new Histogram(1, HIGHEST, SIGNIFICANT)
+
+  // record this value with a count of 10,000
+  instance.recordCorrectedValue(1000, INTERVAL, 10000)
+  instance.recordCorrectedValue(100000000, INTERVAL)
+
+  function checkPercentile (percentile, value, tolerance) {
+    const valueAt = instance.percentile(percentile)
+    const diff = Math.abs(valueAt - value)
+    const val = value * tolerance
+    t.ok(diff < val)
+  }
+
+  const percentiles = [
+    [30.0, 1000.0],
+    [50.0, 1000.0],
+    [75.0, 50000000.0],
+    [90.0, 80000000.0],
+    [99.0, 98000000.0],
+    [99.999, 100000000.0],
+    [100.0, 100000000.0]
+  ]
+
+  percentiles.forEach(pair => {
+    checkPercentile(pair[0], pair[1], 0.001)
+  })
+  t.equal(instance.totalCount, 20000, 'counts match')
+  t.ok(instance.valuesAreEquivalent(instance.min(), 1000.0))
+  t.ok(instance.valuesAreEquivalent(instance.max(), 100000000.0))
+  t.end()
+})
+
 test('add histogram', (t) => {
   const highestTrackableValue = 3600 * 1000 * 1000 // 1 hour in usec units
   const numberOfSignificantValueDigits = 3

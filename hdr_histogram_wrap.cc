@@ -13,6 +13,7 @@ void HdrHistogramWrap::Init(Napi::Env env, Napi::Object target) {
 
   Napi::Function ctor = DefineClass(env, "HdrHistogram", {
     InstanceMethod("record", &HdrHistogramWrap::Record),
+    InstanceMethod("recordCorrectedValue", &HdrHistogramWrap::RecordCorrectedValue),
     InstanceMethod("add", &HdrHistogramWrap::Add),
     InstanceMethod("min", &HdrHistogramWrap::Min),
     InstanceMethod("max", &HdrHistogramWrap::Max),
@@ -83,6 +84,27 @@ Napi::Value HdrHistogramWrap::Record(const Napi::CallbackInfo& info) {
   value = info[0].As<Napi::Number>().Int64Value();
   bool result = hdr_record_value(obj->histogram, value);
   return Napi::Boolean::New(info.Env(), result);
+}
+
+Napi::Value HdrHistogramWrap::RecordCorrectedValue(const Napi::CallbackInfo& info) {
+  HdrHistogramWrap* obj = this;
+  Napi::Env env = info.Env();
+
+  if (info[0].IsUndefined()) {
+    return Napi::Boolean::New(env, false);
+  }
+
+  if (info[1].IsUndefined()) {
+    Napi::Error::New(env, "Interval expected.").ThrowAsJavaScriptException();
+    return Napi::Boolean::New(env, false);
+  }
+
+  int64_t value = info[0].As<Napi::Number>().Int64Value();
+  int64_t expected_interval = info[1].As<Napi::Number>().Int64Value();
+  int64_t count = info[2].IsUndefined() ? 1 : info[2].As<Napi::Number>().Int64Value();
+
+  bool result = hdr_record_corrected_values(obj->histogram, value, count, expected_interval);
+  return Napi::Boolean::New(env, result);
 }
 
 Napi::Value HdrHistogramWrap::Add(const Napi::CallbackInfo& info) {
