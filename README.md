@@ -66,6 +66,7 @@ console.log(histogram.percentiles())
   * <a href="#encode"><code>histogram#<b>encode()</b></code></a>
   * <a href="#decode"><code>histogram#<b>decode()</b></code></a>
   * <a href="#reset"><code>histogram#<b>reset()</b></code></a>
+  * <a href="#countAtValue"><code>histogram#<b>countAtValue()</b></code></a>
   * <a href="#valuesAreEquivalent"><code>histogram#<b>valuesAreEquivalent()</b></code></a>
 
   #### Properties
@@ -187,6 +188,13 @@ Reads a `Buffer` and deserialize an histogram.
 ### histogram.reset()
 
 Resets the histogram so it can be reused.
+
+-------------------------------------------------------
+<a name="countAtValue"></a>
+
+### histogram.countAtValue(value)
+
+Get the count of recorded values at a specific value (to within the histogram resolution at the value level).
 
 -------------------------------------------------------
 <a name="areValuesEquivalent"></a>

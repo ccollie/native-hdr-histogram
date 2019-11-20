@@ -22,6 +22,7 @@ void HdrHistogramWrap::Init(Napi::Env env, Napi::Object target) {
     InstanceMethod("encode", &HdrHistogramWrap::Encode),
     InstanceMethod("percentiles", &HdrHistogramWrap::Percentiles),
     InstanceMethod("reset", &HdrHistogramWrap::Reset),
+    InstanceMethod("countAtValue", &HdrHistogramWrap::GetCountAtValue),
     InstanceMethod("valuesAreEquivalent", &HdrHistogramWrap::ValuesAreEquivalent),
     StaticMethod("decode", &HdrHistogramWrap::Decode),
 
@@ -208,6 +209,21 @@ Napi::Value HdrHistogramWrap::Reset(const Napi::CallbackInfo& info) {
   HdrHistogramWrap* obj = this;
   hdr_reset(obj->histogram);
   return info.This();
+}
+
+Napi::Value HdrHistogramWrap::GetCountAtValue(const Napi::CallbackInfo& info) {
+  HdrHistogramWrap* obj = this;
+  Napi::Env env = info.Env();
+
+  if (info[0].IsUndefined()) {
+    Napi::TypeError::New(env, "integer value expected.").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+
+  int64_t value = info[0].As<Napi::Number>().Int64Value();
+  int64_t count = hdr_count_at_value(obj->histogram, value);
+
+  return Napi::Number::New(env, (double)count);
 }
 
 Napi::Value HdrHistogramWrap::ValuesAreEquivalent(const Napi::CallbackInfo& info) {

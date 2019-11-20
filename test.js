@@ -218,6 +218,19 @@ test('support >2e9', (t) => {
   t.end()
 })
 
+test('countAtValue', (t) => {
+  const instance = new Histogram(1, 100)
+  const testValueLevel = 4
+  const count = Math.floor(Math.random() * 20) + 10
+  for (let i = 0; i < count; i++) {
+    instance.record(testValueLevel)
+  }
+  t.equal(instance.countAtValue(testValueLevel), count, 'record increments countAtValue')
+  t.ok(instance.reset())
+  t.equal(instance.countAtValue(testValueLevel), 0, 'reset() sets count to zero')
+  t.end()
+})
+
 test('valuesAreEquivalent', (t) => {
   const instance = new Histogram(20000000, 100000000, 5)
   instance.record(100000000)
