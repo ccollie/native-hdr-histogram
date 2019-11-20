@@ -75,6 +75,7 @@ HdrHistogramWrap::~HdrHistogramWrap() {
 
 Napi::Value HdrHistogramWrap::Record(const Napi::CallbackInfo& info) {
   int64_t value;
+  int64_t count;
   HdrHistogramWrap* obj = this;
 
   if (info[0].IsUndefined()) {
@@ -82,7 +83,9 @@ Napi::Value HdrHistogramWrap::Record(const Napi::CallbackInfo& info) {
   }
 
   value = info[0].As<Napi::Number>().Int64Value();
-  bool result = hdr_record_value(obj->histogram, value);
+  count = info[1].IsUndefined() ? 1 : info[1].As<Napi::Number>().Int64Value();
+
+  bool result = hdr_record_values(obj->histogram, value, count);
   return Napi::Boolean::New(info.Env(), result);
 }
 

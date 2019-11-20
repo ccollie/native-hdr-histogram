@@ -63,6 +63,25 @@ test('recording a non-value returns false', (t) => {
   t.end()
 })
 
+test('record values with counts', (t) => {
+  const testValueLevel = 4
+
+  const multiplier = 10
+  const instance = new Histogram(1, 360000, 3)
+  for (let i = 1; i < 5; i++) {
+    instance.record(i, multiplier)
+    t.equal(i * multiplier, instance.totalCount, 'record(value, count) increments totalCount')
+  }
+  t.ok(instance.reset())
+
+  for (let j = 1; j < 5; j++) {
+    instance.record(testValueLevel, multiplier)
+    t.equal(j * multiplier, instance.countAtValue(testValueLevel), 'record(value, count) increments countAtValue')
+  }
+
+  t.end()
+})
+
 test('recordCorrectedValue', (t) => {
   const INTERVAL = 10000
   const HIGHEST = 3600 * 1000 * 1000

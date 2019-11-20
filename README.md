@@ -93,9 +93,9 @@ Create a new histogram with:
 -------------------------------------------------------
 <a name="record"></a>
 
-### histogram.record(value)
+### histogram.record(value[, count = 1])
 
-Record `value` in the histogram. Returns `true` if the recording was
+Record `value` in the histogram with a count of `count`. Returns `true` if the recording was
 successful, `false` otherwise.
 -------------------------------------------------------
 <a name="recordCorrectedValue"></a>
