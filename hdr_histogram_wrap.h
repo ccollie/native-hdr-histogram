@@ -27,6 +27,9 @@ class HdrHistogramWrap : public Napi::ObjectWrap<HdrHistogramWrap> {
   Napi::Value Reset(const Napi::CallbackInfo& info);
   Napi::Value GetCountAtValue(const Napi::CallbackInfo& info);
   Napi::Value ValuesAreEquivalent(const Napi::CallbackInfo& info);
+  Napi::Value HighestEquivalentValue(const Napi::CallbackInfo& info);
+  Napi::Value LowestEquivalentValue(const Napi::CallbackInfo& info);
+  Napi::Value NextNonEquivalentValue(const Napi::CallbackInfo& info);
 
   static Napi::Value Decode(const Napi::CallbackInfo& info);
 

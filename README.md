@@ -68,8 +68,11 @@ console.log(histogram.percentiles())
   * <a href="#decode"><code>histogram#<b>decode()</b></code></a>
   * <a href="#reset"><code>histogram#<b>reset()</b></code></a>
   * <a href="#countAtValue"><code>histogram#<b>countAtValue()</b></code></a>
+  * <a href="#lowestEquivalentValue"><code>histogram#<b>lowestEquivalentValue()</b></code></a>
+  * <a href="#highestEquivalentValue"><code>histogram#<b>highestEquivalentValue()</b></code></a>
+  * <a href="#nextNonEquivalentValue"><code>histogram#<b>nextNonEquivalentValue()</b></code></a>
   * <a href="#valuesAreEquivalent"><code>histogram#<b>valuesAreEquivalent()</b></code></a>
-
+  
   #### Properties
   * <a href="#lowestTrackableValue"><code>histogram#lowestTrackableValue</code></a>
   * <a href="#highestTrackableValue"><code>histogram#highestTrackableValue</code></a>
@@ -210,7 +213,32 @@ Resets the histogram so it can be reused.
 Get the count of recorded values at a specific value (to within the histogram resolution at the value level).
 
 -------------------------------------------------------
-<a name="areValuesEquivalent"></a>
+<a name="lowestEquivalentValue"></a>
+
+### histogram.lowestEquivalentValue(value)
+
+Get the lowest value that is equivalent to the given value within the 
+histogram's resolution, where "equivalent" means that value samples 
+recorded for any two equivalent values are counted in a common total count.
+
+------------------------------------------------------
+<a name="highestEquivalentValue"></a>
+
+### histogram.highestEquivalentValue(value)
+
+Get the highest value that is equivalent to the given value within the 
+histogram's resolution, where "equivalent" means that value samples 
+recorded for any two equivalent values are counted in a common total count.
+
+------------------------------------------------------
+<a name="nextNonEquivalentValue"></a>
+
+### histogram.nextNonEquivalentValue(value)
+
+Get the next value that is not equivalent to the given value within the histogram's resolution.
+
+------------------------------------------------------
+<a name="valuesAreEquivalent"></a>
 
 ### histogram.valuesAreEquivalent(value1, value2)
 

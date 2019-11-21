@@ -25,6 +25,10 @@ void HdrHistogramWrap::Init(Napi::Env env, Napi::Object target) {
     InstanceMethod("reset", &HdrHistogramWrap::Reset),
     InstanceMethod("countAtValue", &HdrHistogramWrap::GetCountAtValue),
     InstanceMethod("valuesAreEquivalent", &HdrHistogramWrap::ValuesAreEquivalent),
+    InstanceMethod("highestEquivalentValue", &HdrHistogramWrap::HighestEquivalentValue),
+    InstanceMethod("lowestEquivalentValue", &HdrHistogramWrap::LowestEquivalentValue),
+    InstanceMethod("nextNonEquivalentValue", &HdrHistogramWrap::NextNonEquivalentValue),
+
     StaticMethod("decode", &HdrHistogramWrap::Decode),
 
     InstanceAccessor("totalCount", &HdrHistogramWrap::GetTotalCount, nullptr),
@@ -265,6 +269,48 @@ Napi::Value HdrHistogramWrap::ValuesAreEquivalent(const Napi::CallbackInfo& info
 
   bool equivalent = hdr_values_are_equivalent(obj->histogram, a, b);
   return Napi::Boolean::New(env, equivalent);
+}
+
+Napi::Value HdrHistogramWrap::LowestEquivalentValue(const Napi::CallbackInfo& info) {
+  HdrHistogramWrap* obj = this;
+  Napi::Env env = info.Env();
+  
+  if (info[0].IsUndefined()) {
+    Napi::Error::New(env, "value expected.").ThrowAsJavaScriptException();
+  }
+
+  int64_t value = info[0].As<Napi::Number>().Int64Value();
+  int64_t equivalent = hdr_lowest_equivalent_value(obj->histogram, value);
+
+  return Napi::Number::New(env, (double)equivalent);
+}
+
+Napi::Value HdrHistogramWrap::HighestEquivalentValue(const Napi::CallbackInfo& info) {
+  HdrHistogramWrap* obj = this;
+  Napi::Env env = info.Env();
+
+  if (info[0].IsUndefined()) {
+    Napi::Error::New(env, "value expected.").ThrowAsJavaScriptException();
+  }
+
+  int64_t value = info[0].As<Napi::Number>().Int64Value();
+  int64_t highest = hdr_next_non_equivalent_value(obj->histogram, value) - 1;
+  
+  return Napi::Number::New(env, (double)highest);
+}
+
+Napi::Value HdrHistogramWrap::NextNonEquivalentValue(const Napi::CallbackInfo& info) {
+  HdrHistogramWrap* obj = this;
+  Napi::Env env = info.Env();
+
+  if (info[0].IsUndefined()) {
+    Napi::Error::New(env, "value expected.").ThrowAsJavaScriptException();
+  }
+
+  int64_t value = info[0].As<Napi::Number>().Int64Value();
+  int64_t next = hdr_next_non_equivalent_value(obj->histogram, value);
+ 
+  return Napi::Number::New(env, (double)next);
 }
 
 Napi::Value HdrHistogramWrap::GetTotalCount(const Napi::CallbackInfo& info) {

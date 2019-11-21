@@ -308,6 +308,35 @@ test('valuesAreEquivalent argument checks', (t) => {
   t.end()
 })
 
+test('lowestEquivalentValue', (t) => {
+  const histogram = new Histogram(1, 3600 * 1000 * 1000, 3) // e.g. for 1 hr in usec units;
+  t.equal(histogram.lowestEquivalentValue(10007), 10000, 'The lowest equivalent value to 10007 is 10000')
+  t.equal(histogram.lowestEquivalentValue(10009), 10008, 'The lowest equivalent value to 10009 is 10008')
+  t.end()
+})
+
+test('highestEquivalentValue', (t) => {
+  const histogram = new Histogram(1024, 3600000000, 3)
+  t.equal(histogram.highestEquivalentValue(8180 * 1024), 8183 * 1024 + 1023, 'The highest equivalent value to 8180 * 1024 is 8183 * 1024 + 1023')
+  t.equal(histogram.highestEquivalentValue(8191 * 1024), 8191 * 1024 + 1023, 'The highest equivalent value to 8187 * 1024 is 8191 * 1024 + 1023')
+  t.equal(histogram.highestEquivalentValue(8193 * 1024), 8199 * 1024 + 1023, 'The highest equivalent value to 8193 * 1024 is 8199 * 1024 + 1023')
+  t.equal(histogram.highestEquivalentValue(9995 * 1024), 9999 * 1024 + 1023, 'The highest equivalent value to 9995 * 1024 is 9999 * 1024 + 1023')
+  t.equal(histogram.highestEquivalentValue(10007 * 1024), 10007 * 1024 + 1023, 'The highest equivalent value to 10007 * 1024 is 10007 * 1024 + 1023')
+  t.equal(histogram.highestEquivalentValue(10008 * 1024), 10015 * 1024 + 1023, 'The highest equivalent value to 10008 * 1024 is 10015 * 1024 + 1023')
+  t.end()
+})
+
+test('nextNonEquivalentValue', (t) => {
+  const histogram = new Histogram(1, 3600 * 1000 * 1000, 3) // e.g. for 1 hr in usec units;
+  let prev = histogram.lowestEquivalentValue(10007) // 10000
+  for (let i = 0; i < 5; i++) {
+    let value = histogram.nextNonEquivalentValue(prev)
+    t.notOk(histogram.valuesAreEquivalent(value, prev), 'values should not be equivalent')
+    prev = value
+  }
+  t.end()
+})
+
 test('reset histogram', (t) => {
   const instance = new Histogram(1, 100)
   t.equal(instance.min(), 9223372036854776000, 'min is setup')
