@@ -72,7 +72,7 @@ console.log(histogram.percentiles())
   * <a href="#highestEquivalentValue"><code>histogram#<b>highestEquivalentValue()</b></code></a>
   * <a href="#nextNonEquivalentValue"><code>histogram#<b>nextNonEquivalentValue()</b></code></a>
   * <a href="#valuesAreEquivalent"><code>histogram#<b>valuesAreEquivalent()</b></code></a>
-  
+    
   #### Properties
   * <a href="#lowestTrackableValue"><code>histogram#lowestTrackableValue</code></a>
   * <a href="#highestTrackableValue"><code>histogram#highestTrackableValue</code></a>
@@ -80,6 +80,15 @@ console.log(histogram.percentiles())
   * <a href="#totalCount"><code>histogram#totalCount</code></a>
   * <a href="#memorySize"><code>histogram#memorySize</code></a>
 
+  ### Iteration
+  The module provides multiple means of <a href="#iteration">iterating</a> through the data
+  * <a href="#percentileValues"><code>histogram#percentileValues()</code></a>
+  * <a href="#linearValues"><code>histogram#linearValues()</code></a>
+  * <a href="#logarithmicValues"><code>histogram#logarithmicValues()</code></a>
+  * <a href="#recordedValues"><code>histogram#recordedValues()</code></a>
+  * <a href="#allValues"><code>histogram#allValues()</code></a>
+  
+  
 -------------------------------------------------------
 <a name="histogram"></a>
 
@@ -273,12 +282,89 @@ Get the configured number of significant value digits
 Gets the total number of recorded values.
 
 -------------------------------------------------------
-<a name="#memorySize"></a>
+<a name="memorySize"></a>
 ### histogram.memorySize
 
 Get the memory size of the Histogram.
 
 -------------------------------------------------------
+##Iteration
+<a name="iteration"></a>
+
+Histograms supports multiple convenient forms of iterating through the
+histogram data set, including linear, logarithmic, and percentile iteration
+mechanisms, as well as means for iterating through each recorded value or
+each possible value level. The iteration mechanisms are accessible through
+the through the following Histogram methods:
+
+<a name="percentileValues"></a>
+ - `histogram.percentileValues(ticksPerHalfDistance)`: <br/>  Used for iterating through histogram values according to percentile levels.
+ The iteration is performed in steps that start at 0% and reduce their distance to 100% according to the
+ <i>ticksPerHalfDistance</i> parameter, ultimately reaching 100% when all recorded histogram
+ values are exhausted.
+ 
+ <a name="linearValues"></a>
+ - `histogram.linearValues(valueUnitsPerBucket)`: <br/> Used for iterating through histogram values in linear steps. The iteration is performed 
+ in steps of valueUnitsPerBucket in size, terminating when all recorded histogram values are exhausted. Note that each 
+ iteration "bucket" includes values up to and including the next bucket boundary value.
+ 
+ <a name="logarithmicValues"></a>
+ - `histogram.logarithmicValues(valueUnitsInFirstBucket, logBase)`:  <br/> Iterates through histogram values in logarithmically 
+ increasing levels. The iteration is performed in steps that start at `valueUnitsInFirstBucket` and increase exponentially 
+ according to `logBase`, terminating when all recorded histogram values are exhausted. Note that each iteration "bucket" 
+ includes values up to and including the next bucket boundary value.
+ 
+ <a name="recordedValues"></a>
+ - `histogram.recordedValues()`:  <br/> An iterator that enumerate over all non-zero values.
+ 
+  <a name="allValues"></a>
+ - `histogram.allValues()`:  <br/>
+ Iterates through histogram values using the finest granularity steps supported by the underlying representation.
+
+The iterator methods support the `es6` iterator protocol, so enumeration is typically done with a for-of loop statement. E.g.:
+
+``` javascript
+ for (let v of histogram.percentileValues(ticksPerHalfDistance)) {
+     ...
+ }
+```
+
+ or
+
+``` javascript
+ for (let v of histogram.linearBucketValues(unitsPerBucket)) {
+     ...
+ }
+```
+
+
+The loop iteration value is an `object` with the following fields in the general case: 
+ * <b><code>value</code></b> : The actual value level that was iterated to by the iterator
+ * <b><code>valueIteratedTo</code></b> : The actual value level that was iterated to by the iterator
+ * <b><code>valueIteratedFrom</code></b> : The actual value level that was iterated from by the iterator
+ * <b><code>count</code></b> : The count of recorded values in the histogram that
+ exactly match this [`lowestEquivalentValue(valueIteratedTo)`...`highestEquivalentValue(valueIteratedTo)`] value range.
+ * <b><code>countAddedThisIteration</code></b> : The count of recorded values that
+    were added as a result on this iteration step. Since multiple iteration
+    steps may occur with overlapping equivalent value ranges, the count may be lower than the count found at
+    the value (e.g. multiple linear steps or percentile levels can occur within a single equivalent value range)
+ * <b><code>lowestEquivalentValue</code></b> : The lowest value that is equivalent to the current iteration 
+ value within the histogram's resolution.
+ * <b><code>medianEquivalentValue</code></b> : The lowest value that is equivalent to the current iteration 
+  value within the histogram's resolution.
+ * <b><code>highestEquivalentValue</code> : The highest value that is equivalent to the current iteration 
+  value within the histogram's resolution.
+ * <b><code>medianEquivalentValue</code></b> : a value that lies in the middle (rounded up) of the range of values 
+ (`lowestEquivalentValue` ... `highestEquivalentValue`). "Equivalent" means that value samples recorded for any two equivalent values are counted in a common total count.
+ 
+ In addition to the above, the `percentileValues` iterator returns the following fields:
+ * <b><code>cumulativeCount</code></b> : The total count of all recorded values in the histogram at values 
+    equal or smaller than `valueIteratedTo`.
+ * <b><code>percentile</code></b> : The percentile of recorded values in the histogram at values equal or smaller 
+ than `valueIteratedTo`.
+
+ 
+ 
 ## Acknowledgements
 
 This project was kindly sponsored by [nearForm](http://nearform.com).

@@ -30,6 +30,7 @@
         "src/hdr_time.h",
         "src/hdr_time.c",
         "hdr_histogram_wrap.cc",
+        "hdr_histogram_iterator_wrap.cc",
         "histogram.cc"
       ],
       'defines': [ 'NAPI_CPP_EXCEPTIONS' ], 

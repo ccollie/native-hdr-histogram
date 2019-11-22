@@ -361,3 +361,200 @@ test('reset histogram', (t) => {
   t.equal(instance, resetInstance)
   t.end()
 })
+
+// Iterators
+function loadIteratorHistograms () {
+  const highestTrackableValue = 3600 * 1000 * 1000
+  const significantFigures = 3
+  const interval = 10000
+
+  const rawHistogram = new Histogram(1, highestTrackableValue, significantFigures)
+  const corHistogram = new Histogram(1, highestTrackableValue, significantFigures)
+
+  for (let i = 0; i < 10000; i++) {
+    rawHistogram.record(1000)
+    corHistogram.recordCorrectedValue(1000, interval)
+  }
+
+  rawHistogram.record(100000000)
+  corHistogram.recordCorrectedValue(100000000, 10000)
+
+  return { rawHistogram, corHistogram }
+}
+
+test('allValues() iterator', (t) => {
+  const histogram = new Histogram(1, 3600 * 1000 * 1000, 3)
+  const rawHistogram = new Histogram(1, 3600 * 1000 * 1000, 3)
+
+  for (let i = 0; i < 10000; i++) {
+    histogram.recordCorrectedValue(1000 /* 1 msec */, 10000 /* 10 msec expected interval */)
+    rawHistogram.record(1000 /* 1 msec */)
+  }
+  histogram.recordCorrectedValue(100000000 /* 100 sec */, 10000 /* 10 msec expected interval */)
+  rawHistogram.record(100000000 /* 100 sec */)
+
+  let index = 0
+  // Iterate raw data by stepping through every value that has a count recorded:
+  for (let { value, count } of rawHistogram.allValues()) {
+    if (index === 1000) {
+      t.equals(count, 10000, 'Raw allValues bucket # 0 added a count of 10000')
+    } else if (rawHistogram.valuesAreEquivalent(value, 100000000)) {
+      t.equals(count, 1, 'Raw allValues value bucket # ' + index + ' added a count of 1')
+    } else {
+      t.equals(count, 0, 'Raw allValues value bucket # ' + index + ' added a count of 0')
+    }
+    index++
+  }
+
+  index = 0
+  let totalAddedCounts = 0
+  let prev = 0
+  for (let v of histogram.allValues()) {
+    let { countAddedThisIteration, value, count } = v
+    if (index === 1000) {
+      t.equals(countAddedThisIteration, 10000, 'AllValues bucket # 0 [' + prev + '..' + value + '] added a count of 10000')
+    }
+    t.equals(count, countAddedThisIteration, 'The count in AllValues bucket #' + index +
+            ' is exactly the amount added since the last iteration ')
+    totalAddedCounts += countAddedThisIteration
+    index++
+    prev = value
+  }
+  t.equals(totalAddedCounts, 20000, 'Total added counts should be 20000')
+
+  t.end()
+})
+
+test('recordedValues iterator', (t) => {
+  let totalAddedCount = 0
+
+  const { rawHistogram, corHistogram } = loadIteratorHistograms()
+
+  /* Raw Histogram */
+  let index = 0
+  for (let v of rawHistogram.recordedValues()) {
+    let { countAddedThisIteration } = v
+
+    if (index === 0) {
+      t.equal(countAddedThisIteration, 10000, 'Value at 0 should be 10000')
+    } else {
+      t.equal(countAddedThisIteration, 1, 'Value at 1 should be 1')
+    }
+
+    index++
+  }
+
+  t.equal(index, 2, 'Should have encountered 2 values')
+
+  /* Corrected Histogram */
+  index = 0
+  for (let v of corHistogram.recordedValues()) {
+    let { countAddedThisIteration, count } = v
+
+    if (index === 0) {
+      t.equal(countAddedThisIteration, 10000, 'Count at 0 is 10000')
+    }
+    t.notequal(count, 0, 'Count should not be 0')
+    t.equal(count, countAddedThisIteration, 'Count at value iterated to should be count added in this step')
+    totalAddedCount += countAddedThisIteration
+
+    index++
+  }
+
+  t.equal(totalAddedCount, 20000, 'Total counts should be 20000')
+  t.end()
+})
+
+test('linearValues iterator', (t) => {
+  const { rawHistogram, corHistogram } = loadIteratorHistograms()
+
+  /* Raw Histogram */
+  let index = 0
+  for (let { countAddedThisIteration } of rawHistogram.linearValues(100000)) {
+    if (index === 0) {
+      t.equal(countAddedThisIteration, 10000, 'Count at 0 should be 10000')
+    } else if (index === 999) {
+      t.equal(countAddedThisIteration, 1, 'Count at 999 should be 1')
+    } else {
+      t.equal(countAddedThisIteration, 0, 'Count should be 0')
+    }
+
+    index++
+  }
+  t.equal(index, 1000, 'Should have met 1000 values')
+
+  /* Corrected Histogram */
+  index = 0
+  let totalAddedCount = 0
+  for (let { countAddedThisIteration } of corHistogram.linearValues(10000)) {
+    if (index === 0) {
+      t.equal(countAddedThisIteration, 10001, 'Count at 0 is 10001')
+    }
+
+    totalAddedCount += countAddedThisIteration
+    index++
+  }
+
+  t.equal(index, 10000, 'Should have met 10000 values')
+  t.equal(totalAddedCount, 20000, 'Should have met 20000 values')
+
+  t.end()
+})
+
+test('logarithmicValues iterator', (t) => {
+  const { rawHistogram, corHistogram } = loadIteratorHistograms()
+
+  let index = 0
+
+  for (let v of rawHistogram.logarithmicValues(10000, 2.0)) {
+    let { countAddedThisIteration } = v
+
+    if (index === 0) {
+      t.equal(countAddedThisIteration, 10000, 'Raw Logarithmic 10 msec bucket # 0 added a count of 10000')
+    } else if (index === 14) {
+      t.equal(countAddedThisIteration, 1, 'Raw Logarithmic 10 msec bucket # 14 added a count of 1')
+    } else {
+      t.equal(countAddedThisIteration, 0, 'Raw Logarithmic 10 msec bucket added a count of 0')
+    }
+
+    index++
+  }
+
+  t.equals(index - 1, 14, 'Should have seen 14 values')
+
+  index = 0
+  let totalAddedCount = 0
+  for (let { countAddedThisIteration } of corHistogram.logarithmicValues(10000, 2.0)) {
+    if (index === 0) {
+      t.equal(countAddedThisIteration, 10001, 'Corrected Logarithmic 10 msec bucket # 0 added a count of 10001')
+    }
+    totalAddedCount += countAddedThisIteration
+    index++
+  }
+
+  t.equal(index - 1, 14, 'Should have seen 14 values')
+  t.equal(totalAddedCount, 20000, 'Should have seen a count of 20000')
+  t.end()
+})
+
+test('percentileValues iterator', (t) => {
+  const histogram = new Histogram(1, 3600 * 1000 * 1000, 3)
+  // record this value with a count of 10,000
+  histogram.record(1000, 10000)
+  histogram.record(100000000)
+
+  // test with 5 ticks per half distance
+  for (let item of histogram.percentileValues(5)) {
+    // fix-me
+    if (item.percentile > 0 && item.percentile < 99.99) {
+      let valueAtPercentile = histogram.percentile(item.percentile)
+      let expected = histogram.highestEquivalentValue(valueAtPercentile)
+      if (expected !== item.valueIteratedTo) {
+        console.log(item)
+      }
+      t.equals(expected, item.valueIteratedTo)
+    }
+  }
+
+  t.end()
+})

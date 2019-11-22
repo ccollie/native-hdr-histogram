@@ -7,6 +7,8 @@ extern "C" {
 #include "hdr_histogram.h"
 }
 
+class HdrHistogramIteratorWrap;
+
 class HdrHistogramWrap : public Napi::ObjectWrap<HdrHistogramWrap> {
  public:
   static void Init(Napi::Env env, Napi::Object target);
@@ -33,6 +35,13 @@ class HdrHistogramWrap : public Napi::ObjectWrap<HdrHistogramWrap> {
 
   static Napi::Value Decode(const Napi::CallbackInfo& info);
 
+  // Iterators
+  Napi::Value AllValues(const Napi::CallbackInfo& info);
+  Napi::Value RecordedValues(const Napi::CallbackInfo& info);
+  Napi::Value LinearValues(const Napi::CallbackInfo& info);
+  Napi::Value LogarithmicValues(const Napi::CallbackInfo& info);
+  Napi::Value PercentileValues(const Napi::CallbackInfo& info);
+
   // Property accessors
   Napi::Value GetTotalCount(const Napi::CallbackInfo& info);
   Napi::Value GetHighestTrackableValue(const Napi::CallbackInfo& info);
@@ -44,6 +53,8 @@ class HdrHistogramWrap : public Napi::ObjectWrap<HdrHistogramWrap> {
   static Napi::FunctionReference constructor;
 
   struct hdr_histogram *histogram;
+
+  friend class HdrHistogramIteratorWrap;  
 };
 
 #endif

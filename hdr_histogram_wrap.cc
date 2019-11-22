@@ -1,5 +1,6 @@
 #include <napi.h>
 #include "hdr_histogram_wrap.h"
+#include "hdr_histogram_iterator_wrap.h"
 
 extern "C" {
 #include "hdr_histogram.h"
@@ -30,6 +31,13 @@ void HdrHistogramWrap::Init(Napi::Env env, Napi::Object target) {
     InstanceMethod("nextNonEquivalentValue", &HdrHistogramWrap::NextNonEquivalentValue),
 
     StaticMethod("decode", &HdrHistogramWrap::Decode),
+
+    // Iterators
+    InstanceMethod("allValues", &HdrHistogramWrap::AllValues),
+    InstanceMethod("recordedValues", &HdrHistogramWrap::RecordedValues),
+    InstanceMethod("linearValues", &HdrHistogramWrap::LinearValues),
+    InstanceMethod("logarithmicValues", &HdrHistogramWrap::LogarithmicValues),
+    InstanceMethod("percentileValues", &HdrHistogramWrap::PercentileValues),
 
     InstanceAccessor("totalCount", &HdrHistogramWrap::GetTotalCount, nullptr),
     InstanceAccessor("highestTrackableValue", &HdrHistogramWrap::GetHighestTrackableValue, nullptr),
@@ -312,6 +320,90 @@ Napi::Value HdrHistogramWrap::NextNonEquivalentValue(const Napi::CallbackInfo& i
  
   return Napi::Number::New(env, (double)next);
 }
+
+/* #### ######## ######## ########     ###    ########  #######  ########   ######  */
+/*  ##     ##    ##       ##     ##   ## ##      ##    ##     ## ##     ## ##    ## */
+/*  ##     ##    ##       ##     ##  ##   ##     ##    ##     ## ##     ## ##       */
+/*  ##     ##    ######   ########  ##     ##    ##    ##     ## ########   ######  */
+/*  ##     ##    ##       ##   ##   #########    ##    ##     ## ##   ##         ## */
+/*  ##     ##    ##       ##    ##  ##     ##    ##    ##     ## ##    ##  ##    ## */
+/* ####    ##    ######## ##     ## ##     ##    ##     #######  ##     ##  ######  */
+
+#define RETURN_ITERATOR(iter, type) \
+  Napi::Object result = HdrHistogramIteratorWrap::NewInstance(info.Env(), info.This(), type, &iter); \
+  this->Ref();  \
+  return result;
+
+Napi::Value HdrHistogramWrap::AllValues(const Napi::CallbackInfo& info) {
+  hdr_iter iter;
+  hdr_iter_init(&iter, this->histogram);
+
+  RETURN_ITERATOR(iter, HdrHistogramIteratorWrap::TYPE_ALL)
+}
+
+Napi::Value HdrHistogramWrap::RecordedValues(const Napi::CallbackInfo& info) {
+  hdr_iter iter;
+  hdr_iter_recorded_init(&iter, this->histogram);
+
+  RETURN_ITERATOR(iter, HdrHistogramIteratorWrap::TYPE_RECORDED)
+}
+
+Napi::Value HdrHistogramWrap::LinearValues(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+
+  if (!info[0].IsNumber()) {
+    Napi::TypeError::New(env, "number value expected for valueUnitsPerBucket").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+
+  int64_t value_units_per_bucket = info[0].As<Napi::Number>().Int64Value();
+
+  hdr_iter iter;
+  hdr_iter_linear_init(&iter, this->histogram, value_units_per_bucket);
+
+  RETURN_ITERATOR(iter, HdrHistogramIteratorWrap::TYPE_LINEAR)
+}
+
+Napi::Value HdrHistogramWrap::LogarithmicValues(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+
+  if (!info[0].IsNumber()) {
+    Napi::TypeError::New(env, "number value expected for valueUnitsPerBucket").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+  
+  if (!info[1].IsNumber()) {
+    Napi::TypeError::New(env, "number value expected for logBase").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+
+  int64_t value_units_first_bucket = info[0].As<Napi::Number>().Int64Value();
+  double log_base = info[1].As<Napi::Number>().DoubleValue();
+
+  hdr_iter iter;
+  hdr_iter_log_init(&iter, this->histogram, value_units_first_bucket, log_base);
+
+  RETURN_ITERATOR(iter, HdrHistogramIteratorWrap::TYPE_LOG)
+}
+
+Napi::Value HdrHistogramWrap::PercentileValues(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+
+  int32_t ticksPerHalfDistance = 1;
+  if (!info[0].IsUndefined()) {
+    if (!info[0].IsNumber()) {
+      Napi::TypeError::New(env, "number value expected for ticksPerHalfDistance").ThrowAsJavaScriptException();
+      return env.Undefined();
+    }
+    ticksPerHalfDistance = info[0].As<Napi::Number>().Int32Value();
+  }
+
+  hdr_iter iter;
+  hdr_iter_percentile_init(&iter, this->histogram, ticksPerHalfDistance);
+
+  RETURN_ITERATOR(iter, HdrHistogramIteratorWrap::TYPE_PERCENTILE)
+}
+
 
 Napi::Value HdrHistogramWrap::GetTotalCount(const Napi::CallbackInfo& info) {
   return Napi::Number::New(info.Env(), (double)this->histogram->total_count);

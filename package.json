@@ -8,6 +8,7 @@
     "prepublish": "npm ls",
     "install": "node-pre-gyp install --fallback-to-build",
     "build": "node-pre-gyp rebuild",
+    "build:dev": "node-pre-gyp -j 16 rebuild --debug",
     "test": "standard && tap test.js"
   },
   "precommit": [
