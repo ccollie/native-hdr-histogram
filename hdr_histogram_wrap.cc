@@ -5,6 +5,7 @@
 extern "C" {
 #include "hdr_histogram.h"
 #include "hdr_histogram_log.h"
+#include "hdr_histogram_ex.h"
 }
 
 Napi::FunctionReference HdrHistogramWrap::constructor;
@@ -16,6 +17,7 @@ void HdrHistogramWrap::Init(Napi::Env env, Napi::Object target) {
     InstanceMethod("record", &HdrHistogramWrap::Record),
     InstanceMethod("recordCorrectedValue", &HdrHistogramWrap::RecordCorrectedValue),
     InstanceMethod("add", &HdrHistogramWrap::Add),
+    InstanceMethod("equals", &HdrHistogramWrap::Equals),
     InstanceMethod("min", &HdrHistogramWrap::Min),
     InstanceMethod("max", &HdrHistogramWrap::Max),
     InstanceMethod("mean", &HdrHistogramWrap::Mean),
@@ -145,6 +147,28 @@ Napi::Value HdrHistogramWrap::Add(const Napi::CallbackInfo& info) {
   }
 
   return Napi::Number::New(env, (double)dropped);
+}
+
+Napi::Value HdrHistogramWrap::Equals(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+  HdrHistogramWrap* obj = this;
+  HdrHistogramWrap* other = (HdrHistogramWrap*)NULL;
+
+  if (info[0].IsObject()) {
+    Napi::Object object = info[0].As<Napi::Object>();
+    if (object.InstanceOf(HdrHistogramWrap::constructor.Value())) {
+      other = HdrHistogramWrap::Unwrap(object);
+    } 
+  }
+  
+  if (!other) {
+    Napi::TypeError::New(env, "Histogram value expected.").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+
+  bool isEqual = (obj == other) || hdr_equals(obj->histogram, other->histogram); 
+
+  return Napi::Boolean::New(env, isEqual);
 }
 
 Napi::Value HdrHistogramWrap::Min(const Napi::CallbackInfo& info) {

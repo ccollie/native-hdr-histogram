@@ -29,6 +29,8 @@
         "src/hdr_histogram_log.c",
         "src/hdr_time.h",
         "src/hdr_time.c",
+        "hdr_histogram_ex.h",
+        "hdr_histogram_ex.c",
         "hdr_histogram_wrap.cc",
         "hdr_histogram_iterator_wrap.cc",
         "histogram.cc"

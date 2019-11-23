@@ -175,6 +175,41 @@ test('add with subclasses', (t) => {
   t.end()
 })
 
+test('equals', (t) => {
+  let first = new Histogram(1, 100, 2)
+  let second = new Histogram(1, 100, 2)
+
+  t.ok(first.equals(first), 'A histogram should be equal to itself')
+
+  t.ok(first.equals(second), 'Empty histograms with similar parameters should be equal')
+  first.record(20)
+  first.record(42)
+
+  t.notOk(first.equals(second), 'Histograms with different counts are different')
+  second.record(42)
+  t.notOk(first.equals(second), 'Histograms with different counts are different')
+  second.record(20)
+  t.ok(first.equals(second), 'Histograms with equal counts are equal')
+
+  second = new Histogram(5, 100, 3)
+  t.notOk(first.equals(second), 'Histograms with different parameters are not equal')
+  second.record(20)
+  second.record(42)
+
+  t.notOk(first.equals(second), 'Histograms with different parameters are not equal even if counts are equal')
+
+  t.end()
+})
+
+test('equals with non-histograms', (t) => {
+  let first = new Histogram(1, 100, 2)
+  t.throws(() => first.equals(1))
+  t.throws(() => first.equals([]))
+  t.throws(() => first.equals({}))
+  t.throws(() => first.equals(null))
+  t.end()
+})
+
 test('stdev, mean, min, max', (t) => {
   const instance = new Histogram(1, 100)
   t.ok(instance.record(42))
