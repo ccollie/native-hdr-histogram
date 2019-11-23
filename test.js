@@ -1,5 +1,4 @@
 'use strict'
-
 const test = require('tap').test
 const Histogram = require('./')
 
@@ -197,6 +196,21 @@ test('equals', (t) => {
   second.record(42)
 
   t.notOk(first.equals(second), 'Histograms with different parameters are not equal even if counts are equal')
+
+  t.end()
+})
+
+test('copy', (t) => {
+  let first = new Histogram(1, 100, 2)
+  let second = first.copy()
+  t.ok(first.equals(second), 'Can create an empty copy')
+  first.record(5)
+  first.record(20)
+  first.record(43)
+
+  t.notOk(first.equals(second), 'Copies are separate instances and do not share references')
+  second = first.copy()
+  t.ok(second.equals(first), 'Copies data')
 
   t.end()
 })

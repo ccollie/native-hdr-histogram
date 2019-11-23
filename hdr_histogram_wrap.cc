@@ -17,6 +17,7 @@ void HdrHistogramWrap::Init(Napi::Env env, Napi::Object target) {
     InstanceMethod("record", &HdrHistogramWrap::Record),
     InstanceMethod("recordCorrectedValue", &HdrHistogramWrap::RecordCorrectedValue),
     InstanceMethod("add", &HdrHistogramWrap::Add),
+    InstanceMethod("copy", &HdrHistogramWrap::Copy),
     InstanceMethod("equals", &HdrHistogramWrap::Equals),
     InstanceMethod("min", &HdrHistogramWrap::Min),
     InstanceMethod("max", &HdrHistogramWrap::Max),
@@ -149,6 +150,21 @@ Napi::Value HdrHistogramWrap::Add(const Napi::CallbackInfo& info) {
   return Napi::Number::New(env, (double)dropped);
 }
 
+Napi::Value HdrHistogramWrap::Copy(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+
+  Napi::Number lowest = Napi::Number::New(env, this->histogram->lowest_trackable_value);
+  Napi::Number highest = Napi::Number::New(env, this->histogram->highest_trackable_value);
+  Napi::Number significant_figures = Napi::Number::New(env, this->histogram->significant_figures);
+
+  Napi::Object result = HdrHistogramWrap::constructor.New({ lowest, highest, significant_figures });
+  HdrHistogramWrap* created = HdrHistogramWrap::Unwrap(result);
+
+  hdr_add(created->histogram, this->histogram);
+  
+  return result;
+}
+
 Napi::Value HdrHistogramWrap::Equals(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
   HdrHistogramWrap* obj = this;
@@ -160,7 +176,7 @@ Napi::Value HdrHistogramWrap::Equals(const Napi::CallbackInfo& info) {
       other = HdrHistogramWrap::Unwrap(object);
     } 
   }
-  
+
   if (!other) {
     Napi::TypeError::New(env, "Histogram value expected.").ThrowAsJavaScriptException();
     return env.Undefined();

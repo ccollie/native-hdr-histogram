@@ -58,6 +58,7 @@ console.log(histogram.percentiles())
   * <a href="#record"><code>histogram#<b>record()</b></code></a>
   * <a href="#recordCorrectedValue"><code>histogram#<b>recordCorrectedValue()</b></code></a>
   * <a href="#add"><code>histogram#<b>add()</b></code></a>
+  * <a href="#copy"><code>histogram#<b>copy()</b></code></a>
   * <a href="#equals"><code>histogram#<b>equals()</b></code></a>
   * <a href="#min"><code>histogram#<b>min()</b></code></a>
   * <a href="#max"><code>histogram#<b>max()</b></code></a>
@@ -137,6 +138,12 @@ in the current histogram that is larger than the `expectedIntervalBetweenValueSa
      
 Returns the number of values dropped while copying. Values will be dropped
 if they around outside of `histogram.lowestTrackableValue` and  `histogram.highestTrackableValue`. 
+-------------------------------------------------------
+<a name="copy"></a>
+
+### histogram.copy()
+
+Create a copy of this histogram, complete with data and settings.
 
 -------------------------------------------------------
 <a name="equals"></a>
