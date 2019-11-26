@@ -73,6 +73,7 @@ console.log(histogram.percentiles())
   * <a href="#countAtValue"><code>histogram#<b>countAtValue()</b></code></a>
   * <a href="#countBetweenValues"><code>histogram#<b>countBetweenValues()</b></code></a>
   * <a href="#lowestEquivalentValue"><code>histogram#<b>lowestEquivalentValue()</b></code></a>
+  * <a href="#medianEquivalentValue"><code>histogram#<b>medianEquivalentValue()</b></code></a>
   * <a href="#highestEquivalentValue"><code>histogram#<b>highestEquivalentValue()</b></code></a>
   * <a href="#nextNonEquivalentValue"><code>histogram#<b>nextNonEquivalentValue()</b></code></a>
   * <a href="#valuesAreEquivalent"><code>histogram#<b>valuesAreEquivalent()</b></code></a>
@@ -267,6 +268,15 @@ Get the count of recorded values within a range of value levels (inclusive to wi
 Get the lowest value that is equivalent to the given value within the 
 histogram's resolution, where "equivalent" means that value samples 
 recorded for any two equivalent values are counted in a common total count.
+
+-------------------------------------------------------
+<a name="medianEquivalentValue"></a>
+
+### histogram.medianEquivalentValue(value)
+
+Get a value that lies in the middle (rounded up) of the range of values equivalent to the given value,
+where "equivalent" means that value samples recorded for any two equivalent values are counted in a 
+common total count.
 
 ------------------------------------------------------
 <a name="highestEquivalentValue"></a>

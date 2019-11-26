@@ -463,6 +463,16 @@ test('highestEquivalentValue', (t) => {
   t.end()
 })
 
+test('medianEquivalentValue', (t) => {
+  const histogram = new Histogram(1, 3600 * 1000 * 1000, 3)
+  t.equals(histogram.medianEquivalentValue(4), 4, 'The median equivalent value to 4 is 4')
+  t.equals(histogram.medianEquivalentValue(5), 5, 'The median equivalent value to 5 is 5')
+  t.equals(histogram.medianEquivalentValue(4000), 4001, 'The median equivalent value to 4000 is 4001')
+  t.equals(histogram.medianEquivalentValue(8000), 8002, 'The median equivalent value to 8000 is 8002')
+  t.equals(histogram.medianEquivalentValue(10007), 10004, 'The median equivalent value to 10007 is 10004')
+  t.end()
+})
+
 test('nextNonEquivalentValue', (t) => {
   const histogram = new Histogram(1, 3600 * 1000 * 1000, 3) // e.g. for 1 hr in usec units;
   let prev = histogram.lowestEquivalentValue(10007) // 10000

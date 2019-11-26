@@ -32,6 +32,7 @@ void HdrHistogramWrap::Init(Napi::Env env, Napi::Object target) {
     InstanceMethod("countBetweenValues", &HdrHistogramWrap::GetCountBetweenValues),
     InstanceMethod("valuesAreEquivalent", &HdrHistogramWrap::ValuesAreEquivalent),
     InstanceMethod("highestEquivalentValue", &HdrHistogramWrap::HighestEquivalentValue),
+    InstanceMethod("medianEquivalentValue", &HdrHistogramWrap::MedianEquivalentValue),
     InstanceMethod("lowestEquivalentValue", &HdrHistogramWrap::LowestEquivalentValue),
     InstanceMethod("nextNonEquivalentValue", &HdrHistogramWrap::NextNonEquivalentValue),
 
@@ -387,6 +388,20 @@ Napi::Value HdrHistogramWrap::HighestEquivalentValue(const Napi::CallbackInfo& i
   int64_t highest = hdr_next_non_equivalent_value(obj->histogram, value) - 1;
   
   return Napi::Number::New(env, (double)highest);
+}
+
+Napi::Value HdrHistogramWrap::MedianEquivalentValue(const Napi::CallbackInfo& info) {
+    HdrHistogramWrap* obj = this;
+    Napi::Env env = info.Env();
+
+    if (info[0].IsUndefined()) {
+        Napi::Error::New(env, "value expected.").ThrowAsJavaScriptException();
+    }
+
+    int64_t value = info[0].As<Napi::Number>().Int64Value();
+    int64_t highest = hdr_median_equivalent_value(obj->histogram, value);
+
+    return Napi::Number::New(env, (double)highest);
 }
 
 Napi::Value HdrHistogramWrap::NextNonEquivalentValue(const Napi::CallbackInfo& info) {
