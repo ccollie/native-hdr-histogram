@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <inttypes.h>
 
 #include "hdr_histogram.h"
@@ -74,4 +75,38 @@ int64_t hdr_count_between_values(const struct hdr_histogram *h, int64_t low_valu
         count += hdr_count_at_value(h, value);
     }
     return count;
+}
+
+int64_t hdr_subtract(struct hdr_histogram* h, const struct hdr_histogram* from)
+{
+    struct hdr_iter iter;
+    int64_t dropped = 0;
+    hdr_iter_recorded_init(&iter, from);
+
+    while (hdr_iter_next(&iter))
+    {
+        int64_t value = iter.value;
+        int64_t count = iter.count;
+
+        int64_t current_count = hdr_count_at_value(h, value);
+
+        if (current_count == 0) {
+            dropped += count;
+            continue;
+        }
+
+        int64_t delta = current_count - count;
+
+        if (delta < 0) {
+            count = current_count;
+            dropped += labs(delta);
+        }
+
+        if (!hdr_record_values(h, value, -count))
+        {
+            dropped += count;
+        }
+    }
+
+    return dropped;
 }

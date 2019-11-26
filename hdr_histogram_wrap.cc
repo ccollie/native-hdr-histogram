@@ -17,6 +17,7 @@ void HdrHistogramWrap::Init(Napi::Env env, Napi::Object target) {
     InstanceMethod("record", &HdrHistogramWrap::Record),
     InstanceMethod("recordCorrectedValue", &HdrHistogramWrap::RecordCorrectedValue),
     InstanceMethod("add", &HdrHistogramWrap::Add),
+    InstanceMethod("subtract", &HdrHistogramWrap::Subtract),
     InstanceMethod("copy", &HdrHistogramWrap::Copy),
     InstanceMethod("equals", &HdrHistogramWrap::Equals),
     InstanceMethod("min", &HdrHistogramWrap::Min),
@@ -149,6 +150,24 @@ Napi::Value HdrHistogramWrap::Add(const Napi::CallbackInfo& info) {
   }
 
   return Napi::Number::New(env, (double)dropped);
+}
+
+Napi::Value HdrHistogramWrap::Subtract(const Napi::CallbackInfo& info) {
+    Napi::Env env = info.Env();
+
+    Napi::Object object = info[0].As<Napi::Object>();
+    bool isHistogram = object.InstanceOf(HdrHistogramWrap::constructor.Value());
+    if (!isHistogram) {
+        Napi::TypeError::New(env, "Histogram expected.").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    HdrHistogramWrap* obj = this;
+    HdrHistogramWrap* from = HdrHistogramWrap::Unwrap(object);
+
+    int64_t dropped = hdr_subtract(obj->histogram, from->histogram);
+
+    return Napi::Number::New(env, (double)dropped);
 }
 
 Napi::Value HdrHistogramWrap::Copy(const Napi::CallbackInfo& info) {

@@ -35,4 +35,16 @@ int64_t hdr_highest_equivalent_value(const struct hdr_histogram *h, int64_t valu
  */
 int64_t hdr_count_between_values(const struct hdr_histogram* h, int64_t low_value, int64_t high_value);
 
+/**
+ * Subtracts all of the values in 'from' from 'this' histogram.  Will return the
+ * number of values that are dropped when copying.  Values will be dropped
+ * if they around outside of h.lowest_trackable_value and
+ * h.highest_trackable_value.
+ *
+ * @param h "This" pointer
+ * @param from Histogram to copy values from.
+ * @return The number of values dropped when copying.
+ */
+int64_t hdr_subtract(struct hdr_histogram* h, const struct hdr_histogram* from);
+
 #endif

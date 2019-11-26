@@ -58,6 +58,7 @@ console.log(histogram.percentiles())
   * <a href="#record"><code>histogram#<b>record()</b></code></a>
   * <a href="#recordCorrectedValue"><code>histogram#<b>recordCorrectedValue()</b></code></a>
   * <a href="#add"><code>histogram#<b>add()</b></code></a>
+  * <a href="#subtract"><code>histogram#<b>subtract()</b></code></a>
   * <a href="#copy"><code>histogram#<b>copy()</b></code></a>
   * <a href="#equals"><code>histogram#<b>equals()</b></code></a>
   * <a href="#min"><code>histogram#<b>min()</b></code></a>
@@ -129,7 +130,7 @@ Returns `true` if the recording was successful, `false` otherwise.
 
 ### histogram.add(other[, expectedIntervalBetweenValueSamples])
 
-Adds values from `other` to 'this' histogram.  
+Adds values from `other` to `this` histogram.  
 
 If `expectedIntervalBetweenValueSamples` is specified, values are 
 backfilled with values that would have occurred had the client providing the load 
@@ -138,7 +139,17 @@ decreasingly-smaller (down to the `expectedIntervalBetweenValueSamples`) value r
 in the current histogram that is larger than the `expectedIntervalBetweenValueSamples`.
      
 Returns the number of values dropped while copying. Values will be dropped
-if they around outside of `histogram.lowestTrackableValue` and  `histogram.highestTrackableValue`. 
+if they are outside of `histogram.lowestTrackableValue` and  `histogram.highestTrackableValue`. 
+-------------------------------------------------------
+<a name="subtract"></a>
+
+### histogram.subtract(other)
+
+Subtract the contents of `other` from `this` histogram.  
+     
+Returns the number of values dropped while subtracting. Values will be dropped
+if they would cause the count to fall below zero. 
+
 -------------------------------------------------------
 <a name="copy"></a>
 

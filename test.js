@@ -174,6 +174,70 @@ test('add with subclasses', (t) => {
   t.end()
 })
 
+test('subtract', (t) => {
+  const testValueLevel = 4
+  const highestTrackableValue = 3600 * 1000 * 1000
+  const significantDigits = 3
+  let histogram = new Histogram(1, highestTrackableValue, significantDigits)
+  let other = new Histogram(1, highestTrackableValue, significantDigits)
+  histogram.record(testValueLevel)
+  histogram.record(testValueLevel * 1000)
+  other.record(testValueLevel)
+  other.record(testValueLevel * 1000)
+  histogram.add(other)
+  t.equals(histogram.countAtValue(testValueLevel), 2)
+  t.equals(histogram.countAtValue(testValueLevel * 1000), 2)
+  t.equals(histogram.totalCount, 4)
+  histogram.add(other)
+  t.equals(histogram.countAtValue(testValueLevel), 3)
+  t.equals(histogram.countAtValue(testValueLevel * 1000), 3)
+  t.equals(histogram.totalCount, 6)
+  histogram.subtract(other)
+  t.equals(histogram.countAtValue(testValueLevel), 2)
+  t.equals(histogram.countAtValue(testValueLevel * 1000), 2)
+  t.equals(histogram.totalCount, 4)
+
+  t.end()
+})
+
+test('subtract to zero', (t) => {
+  const testValueLevel = 4
+  const highestTrackableValue = 3600 * 1000 * 1000
+  const significantDigits = 3
+  const histogram = new Histogram(1, highestTrackableValue, significantDigits)
+  histogram.record(testValueLevel)
+  histogram.record(testValueLevel * 1000)
+  t.equals(histogram.countAtValue(testValueLevel), 1)
+  t.equals(histogram.countAtValue(testValueLevel * 1000), 1)
+  t.equals(histogram.totalCount, 2)
+
+  // Subtracting down to zero counts should work:
+  histogram.subtract(histogram)
+  t.equals(histogram.countAtValue(testValueLevel), 0)
+  t.equals(histogram.countAtValue(testValueLevel * 1000), 0)
+  t.equals(histogram.totalCount, 0)
+
+  t.end()
+})
+
+test('subtract greater values', (t) => {
+  const testValueLevel = 4
+  const highestTrackableValue = 3600 * 1000 * 1000
+  const histogram = new Histogram(1, highestTrackableValue, 3)
+  const other = new Histogram(1, highestTrackableValue, 3)
+
+  histogram.record(testValueLevel)
+  histogram.record(testValueLevel * 1000)
+
+  other.record(testValueLevel, 2)
+  other.record(testValueLevel * 1000, 2)
+
+  const dropped = histogram.subtract(other)
+  t.equals(dropped, 2, 'subtract does not allow negative values')
+
+  t.end()
+})
+
 test('equals', (t) => {
   let first = new Histogram(1, 100, 2)
   let second = new Histogram(1, 100, 2)
