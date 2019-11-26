@@ -70,6 +70,7 @@ console.log(histogram.percentiles())
   * <a href="#decode"><code>histogram#<b>decode()</b></code></a>
   * <a href="#reset"><code>histogram#<b>reset()</b></code></a>
   * <a href="#countAtValue"><code>histogram#<b>countAtValue()</b></code></a>
+  * <a href="#countBetweenValues"><code>histogram#<b>countBetweenValues()</b></code></a>
   * <a href="#lowestEquivalentValue"><code>histogram#<b>lowestEquivalentValue()</b></code></a>
   * <a href="#highestEquivalentValue"><code>histogram#<b>highestEquivalentValue()</b></code></a>
   * <a href="#nextNonEquivalentValue"><code>histogram#<b>nextNonEquivalentValue()</b></code></a>
@@ -235,6 +236,17 @@ Resets the histogram so it can be reused.
 ### histogram.countAtValue(value)
 
 Get the count of recorded values at a specific value (to within the histogram resolution at the value level).
+
+-------------------------------------------------------
+<a name="countBetweenValues​"></a>
+
+### histogram.countBetweenValues​(lowValue, highValue)
+
+Get the count of recorded values within a range of value levels (inclusive to within the histogram's resolution).
+
+##### Parameters
+* `lowValue` - The lower value bound on the range for which to provide the recorded count. Will be rounded down with lowestEquivalentValue.
+* `highValue` - The higher value bound on the range for which to provide the recorded count. Will be rounded up with highestEquivalentValue.
 
 -------------------------------------------------------
 <a name="lowestEquivalentValue"></a>

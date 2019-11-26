@@ -59,3 +59,19 @@ bool hdr_equals(struct hdr_histogram* a, struct hdr_histogram* b)
 
     return false;
 }
+
+int64_t hdr_highest_equivalent_value(const struct hdr_histogram *h, int64_t value) 
+{
+    return hdr_next_non_equivalent_value(h, value) - 1;
+}
+
+int64_t hdr_count_between_values(const struct hdr_histogram *h, int64_t low_value, int64_t high_value) 
+{
+    int64_t lowest = hdr_lowest_equivalent_value(h, low_value);
+    int64_t highest = hdr_highest_equivalent_value(h, high_value);
+    int64_t count = 0;
+    for (int64_t value = lowest; value <= highest; value = hdr_next_non_equivalent_value(h, value)) {
+        count += hdr_count_at_value(h, value);
+    }
+    return count;
+}

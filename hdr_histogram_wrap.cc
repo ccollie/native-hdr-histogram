@@ -28,6 +28,7 @@ void HdrHistogramWrap::Init(Napi::Env env, Napi::Object target) {
     InstanceMethod("percentiles", &HdrHistogramWrap::Percentiles),
     InstanceMethod("reset", &HdrHistogramWrap::Reset),
     InstanceMethod("countAtValue", &HdrHistogramWrap::GetCountAtValue),
+    InstanceMethod("countBetweenValues", &HdrHistogramWrap::GetCountBetweenValues),
     InstanceMethod("valuesAreEquivalent", &HdrHistogramWrap::ValuesAreEquivalent),
     InstanceMethod("highestEquivalentValue", &HdrHistogramWrap::HighestEquivalentValue),
     InstanceMethod("lowestEquivalentValue", &HdrHistogramWrap::LowestEquivalentValue),
@@ -299,6 +300,28 @@ Napi::Value HdrHistogramWrap::GetCountAtValue(const Napi::CallbackInfo& info) {
 
   int64_t value = info[0].As<Napi::Number>().Int64Value();
   int64_t count = hdr_count_at_value(obj->histogram, value);
+
+  return Napi::Number::New(env, (double)count);
+}
+
+Napi::Value HdrHistogramWrap::GetCountBetweenValues(const Napi::CallbackInfo& info) {
+  HdrHistogramWrap* obj = this;
+  Napi::Env env = info.Env();
+
+  if (!info[0].IsNumber()) {
+    Napi::TypeError::New(env, "number expected for lowValue.").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+
+  if (!info[1].IsNumber()) {
+    Napi::TypeError::New(env, "number expected for highValue.").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+
+  int64_t low = info[0].As<Napi::Number>().Int64Value();
+  int64_t high = info[1].As<Napi::Number>().Int64Value();
+
+  int64_t count = hdr_count_between_values(obj->histogram, low, high);
 
   return Napi::Number::New(env, (double)count);
 }

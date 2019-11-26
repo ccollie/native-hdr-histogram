@@ -30,6 +30,7 @@ class HdrHistogramWrap : public Napi::ObjectWrap<HdrHistogramWrap> {
   Napi::Value Percentiles(const Napi::CallbackInfo& info);
   Napi::Value Reset(const Napi::CallbackInfo& info);
   Napi::Value GetCountAtValue(const Napi::CallbackInfo& info);
+  Napi::Value GetCountBetweenValues(const Napi::CallbackInfo& info);
   Napi::Value ValuesAreEquivalent(const Napi::CallbackInfo& info);
   Napi::Value HighestEquivalentValue(const Napi::CallbackInfo& info);
   Napi::Value LowestEquivalentValue(const Napi::CallbackInfo& info);

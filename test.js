@@ -335,6 +335,30 @@ test('countAtValue', (t) => {
   t.end()
 })
 
+test('countBetweenValues', (t) => {
+  const highestTrackableValue = 3600 * 1000 * 1000 // 1 hour in usec units
+  const numberOfSignificantValueDigits = 3 // Maintain at least 3 decimal points of accuracy
+
+  const histogram = new Histogram(1, highestTrackableValue, numberOfSignificantValueDigits)
+  const rawHistogram = new Histogram(1, highestTrackableValue, numberOfSignificantValueDigits)
+
+  // Log hypothetical scenario: 100 seconds of "perfect" 1msec results, sampled
+  // 100 times per second (10,000 results), followed by a 100 second pause with
+  // a single (100 second) recorded result. Recording is done indicating an expected
+  // interval between samples of 10 msec:
+  for (let i = 0; i < 10000; i++) {
+    histogram.recordCorrectedValue(1000 /* 1 msec */, 10000 /* 10 msec expected interval */)
+    rawHistogram.record(1000 /* 1 msec */)
+  }
+  histogram.recordCorrectedValue(100000000 /* 100 sec */, 10000 /* 10 msec expected interval */)
+  rawHistogram.record(100000000 /* 100 sec */)
+
+  t.equals(rawHistogram.countBetweenValues(1000, 1000), 10000, 'Count of raw values between 1 msec and 1 msec is 1')
+  t.equals(rawHistogram.countBetweenValues(5000, 150000000), 1, 'Count of raw values between 5 msec and 150 sec is 1')
+  t.equals(histogram.countBetweenValues(5000, 150000000), 10000, 'Count of values between 5 msec and 150 sec is 10,000')
+  t.end()
+})
+
 test('valuesAreEquivalent', (t) => {
   const instance = new Histogram(20000000, 100000000, 5)
   instance.record(100000000)
